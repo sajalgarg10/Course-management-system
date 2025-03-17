@@ -73,7 +73,7 @@ class CourseStudentMapping(models.Model):
     # TODO RECHECK LOGIC
     def save(self, **kwargs):
         obj = CourseStudentMapping.objects.filter(pk=self.pk).first()
-        if obj and obj.status == "Completed":
+        if obj and obj.status == "completed":
             raise ValueError(" Cannot change for Completed status")
         super().save(**kwargs)
 
