@@ -209,15 +209,25 @@ class RegisterCourses(APIView):
 
     def post(self, request, pk):
         try:
+            #TODO capacity changes query
+            #TODO exception handling for exact error
             student = request.user
             teacher_course_mapping = TeachersCoursesMapping.objects.get(id=pk)
+            if teacher_course_mapping.capacity == 0:
+                raise CustomException("Capacity is full")
             teacher = teacher_course_mapping.teacher
             course = teacher_course_mapping.course
-            student_course = CourseStudentMapping(
-                student=student, course=course, teacher=teacher
-            )
-            student_course.save()
+            with transaction.atomic():
+                student_course = CourseStudentMapping(
+                    student=student, course=course, teacher=teacher
+                )
+                student_course.save()
+                teacher_course_mapping.capacity = teacher_course_mapping.capacity - 1
+                teacher_course_mapping.save()
             return Response({"meassage": "successfully registered"}, status.HTTP_200_OK)
+        except CustomException as ex:
+            message = {"message": str(ex)}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
         except Exception as ex:
             message = {"message": str(ex)}
             return Response(message, status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -287,7 +297,7 @@ class UpdateGradeBook(APIView):
                         student=course_student_obj.student,
                     )
                     grade_book.save()
-                    course_student_obj.status = "Completed"
+                    course_student_obj.status = "completed"
                     course_student_obj.save()
             return Response(
                 {"meassage": "successfully added Grade"}, status.HTTP_200_OK

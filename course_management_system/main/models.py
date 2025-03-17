@@ -36,6 +36,7 @@ class TeachersCoursesMapping(models.Model):
         Course, on_delete=models.CASCADE, related_name="course_teacher"
     )
     teacher = models.ForeignKey(User, on_delete=models.CASCADE)
+    capacity = models.PositiveSmallIntegerField(default=60)
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -107,9 +108,9 @@ class GradeBook(models.Model):
     def clean(self):
         super().clean()
         if self.marks_obtained < self.passing_marks:
-            self.status = "Fail"
+            self.status = "fail"
         else:
-            self.status = "Pass"
+            self.status = "pass"
 
     def save(self, *args, **kwargs):
         self.clean()
