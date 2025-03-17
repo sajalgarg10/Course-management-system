@@ -107,9 +107,9 @@ class GradeBook(models.Model):
     def clean(self):
         super().clean()
         if self.marks_obtained < self.passing_marks:
-            self.status = "Fail"
+            self.status = "fail"
         else:
-            self.status = "Pass"
+            self.status = "pass"
 
     def save(self, *args, **kwargs):
         self.clean()

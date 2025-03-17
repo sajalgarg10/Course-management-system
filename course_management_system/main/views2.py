@@ -287,7 +287,7 @@ class UpdateGradeBook(APIView):
                         student=course_student_obj.student,
                     )
                     grade_book.save()
-                    course_student_obj.status = "Completed"
+                    course_student_obj.status = "completed"
                     course_student_obj.save()
             return Response(
                 {"meassage": "successfully added Grade"}, status.HTTP_200_OK
