@@ -13,8 +13,9 @@ from .serializer import (
     GradeBookSerializer,
     RegisrationSerializer,
 )
-from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.core.exceptions import ValidationError,  ObjectDoesNotExist
+from django.db import transaction 
+from django.db.utils import IntegrityError
 from .models import (
     Course,
     TeachersCoursesMapping,
@@ -91,6 +92,8 @@ class TeacherRegister(APIView):
                 ).first()
                 for i in request.data.get("subjects"):
                     course = Course.objects.filter(name=i).first()
+                    if not course:
+                        raise CustomException("course does not exists")
                     teacher_course_mapping = TeachersCoursesMapping(
                         teacher=teacher, course=course
                     )
@@ -157,6 +160,9 @@ class CourseView(APIView):
         except CustomException as ex:
             message = {"message": str(ex)}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
+        except ObjectDoesNotExist as ex:
+            message = {"message": str(ex)}
+            return Response(message, status.HTTP_400_BAD_REQUEST)
         except Exception as ex:
             message = {"meassage": str(ex)}
             return Response(message, status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -218,6 +224,12 @@ class RegisterCourses(APIView):
             )
             student_course.save()
             return Response({"meassage": "successfully registered"}, status.HTTP_200_OK)
+        except ObjectDoesNotExist as ex:
+            message = {"message": str(ex)}
+            return Response(message, status.HTTP_400_BAD_REQUEST)
+        except IntegrityError as ex:
+            message = {"message": str(ex)}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
         except Exception as ex:
             message = {"message": str(ex)}
             return Response(message, status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -293,6 +305,9 @@ class UpdateGradeBook(APIView):
                 {"meassage": "successfully added Grade"}, status.HTTP_200_OK
             )
         except CustomException as ex:
+            message = {"message": str(ex)}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+        except ValueError as ex:
             message = {"message": str(ex)}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
         except Exception as ex:
