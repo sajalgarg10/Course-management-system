@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .permissions import IsStudent, IsTeacher
+from helper.permissions import IsStudent, IsTeacher
 from rest_framework import status
 from authentication.serializer import UserSerializer
 from rest_framework.response import Response
@@ -19,6 +19,9 @@ from authentication.serializer import UserSerializer
 
 
 class StudentDashboard(APIView):
+    """
+    Student Dashboard api to fetch all course with their respected teacher
+    """
     permission_classes = [IsAuthenticated, IsStudent]
 
     def get(self, request):
@@ -29,6 +32,9 @@ class StudentDashboard(APIView):
         return Response(serializer.data, status.HTTP_200_OK)
 
 class RegisterCourses(APIView):
+    """
+    Register Courses api for student to register and fetch registered courses data
+    """
     permission_classes = [IsAuthenticated, IsStudent]
 
     class CourseTeacherAllocatedSerializer(CourseStudentMappingSerializer):
@@ -38,8 +44,7 @@ class RegisterCourses(APIView):
             fields = CourseStudentMappingSerializer.Meta.fields + ["teacher"]
 
     def get(self, request):
-        id = request.user.id
-        all_registed_subject = CourseStudentMapping.objects.active().filter(student=id)
+        all_registed_subject = CourseStudentMapping.objects.active().filter(student=request.user.id)
         serializer = self.CourseTeacherAllocatedSerializer(
             all_registed_subject, many=True
         )
@@ -65,6 +70,9 @@ class RegisterCourses(APIView):
         return Response({"meassage": "Successfully registered"}, status.HTTP_200_OK)
 
 class TeacherDashboard(APIView):
+    """
+    Teacher Dashboard api to fetch all registered student data under them
+    """
     permission_classes = [IsAuthenticated, IsTeacher]
 
     class CourseStudentAllocatedSerializer(CourseStudentMappingSerializer):
@@ -74,10 +82,9 @@ class TeacherDashboard(APIView):
             fields = CourseStudentMappingSerializer.Meta.fields + ["student"]
 
     def get(self, request):
-        id = request.user.id
         student_list = CourseStudentMapping.objects.active().select_related(
             "teacher", "student", "course"
-        ).filter(teacher__id=id)
+        ).filter(teacher__id=request.user.id)
 
         serializer = self.CourseStudentAllocatedSerializer(student_list, many=True)
         return Response(serializer.data, status.HTTP_200_OK)

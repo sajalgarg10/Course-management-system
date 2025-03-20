@@ -28,6 +28,9 @@ def get_tokens_for_user(user):
 
 
 class Register(APIView):
+    """
+    Registeration API for admin and user
+    """
     class RegistrationSerializer(serializers.Serializer):
         username = serializers.CharField(required=True)
         password = serializers.CharField(required=True)
@@ -53,6 +56,9 @@ class Register(APIView):
 
 
 class TeacherRegister(APIView):
+    """
+    Registeration API for teacher
+    """
 
     class RegistrationSerializer(serializers.Serializer):
         username = serializers.CharField(required=True)
@@ -100,6 +106,9 @@ class TeacherRegister(APIView):
 
 
 class Login(APIView):
+    """
+    Login api for admin, student and teacher
+    """
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")

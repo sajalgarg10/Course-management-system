@@ -2,7 +2,7 @@ from .models import User
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .permissions import IsAdmin
+from helper.permissions import IsAdmin
 from rest_framework import status
 from rest_framework.response import Response
 from .serializer import (
@@ -18,6 +18,9 @@ from rest_framework import serializers
 
 
 class CourseView(APIView):
+    """
+    Course API to post , update and delete course object
+    """
     permission_classes = [IsAuthenticated, IsAdmin]
 
     class ValidateInputDataCourseSerialier(serializers.Serializer):

@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .permissions import IsStudent, IsTeacher
+from helper.permissions import IsStudent, IsTeacher
 from rest_framework import status
 from rest_framework.response import Response
 from .serializer import (
@@ -16,6 +16,9 @@ from rest_framework import serializers
 
 
 class UpdateGradeBook(APIView):
+    """
+    teacher can update grade book for student
+    """
     permission_classes = [IsAuthenticated, IsTeacher]
 
     class ValidateInputDataGradeBookSerialier(serializers.Serializer):
@@ -26,7 +29,6 @@ class UpdateGradeBook(APIView):
         )
 
     def post(self, request):
-        id = request.user.id
         validate_input_data = self.ValidateInputDataGradeBookSerialier(
             data=request.data
         )
@@ -35,39 +37,37 @@ class UpdateGradeBook(APIView):
         
         student_id = validate_input_data.validated_data.get("student_id")
         course_id = validate_input_data.validated_data.get("course_id")
-        course_student_queryset = CourseStudentMapping.objects.active().select_related(
+        course_student_obj = CourseStudentMapping.objects.active().select_related(
             "teacher" , "student", "course"
-        ).filter(teacher__id=id, course=course_id, student=student_id)
-        if not course_student_queryset:
-            return Response({"message": "Student course alloaction not found"}, status=status.HTTP_400_BAD_REQUEST)
+        ).filter(teacher__id= request.user.id, course=course_id, student=student_id).first()
+        if not course_student_obj:
+            return Response({"message": "Student course alloaction not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        for course_student_obj in course_student_queryset:
-            grade_book = GradeBook(
-                course=course_student_obj.course,
-                marks_obtained=validate_input_data.validated_data.get(
-                    "marks_obtained"
-                ),
-                student=course_student_obj.student,
-            )
-            try:
-                with transaction.atomic():
-                    grade_book.save()
-                    course_student_obj.status = "completed"
-                    course_student_obj.save()
-            except ValidationError as ex:
-                return Response({"message": ex.message}, status=status.HTTP_400_BAD_REQUEST)   
+        grade_book = GradeBook(
+            course=course_student_obj.course,
+            marks_obtained=validate_input_data.validated_data.get(
+                "marks_obtained"
+            ),
+            student=course_student_obj.student,
+        )
+        try:
+            grade_book.save()
+        except ValidationError as ex:
+            return Response({"message": ex.message}, status=status.HTTP_400_BAD_REQUEST)   
         return Response(
             {"meassage": "Successfully added grade"}, status.HTTP_200_OK
         )
 
 
 class GetGradeBook(APIView):
+    """
+    Get api for student to fetch report 
+    """
     permission_classes = [IsAuthenticated, IsStudent]
 
     def get(self, request):
-        id = request.user.id
         grade_book = GradeBook.objects.active().select_related("course", "student").filter(
-            student=id
+            student=request.user.id
         )
         serializer = GradeBookSerializer(grade_book, many=True)
         return Response(serializer.data, status.HTTP_200_OK)
